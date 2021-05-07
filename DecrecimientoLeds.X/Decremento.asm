@@ -1,0 +1,55 @@
+	    LIST P=16F887
+	    INCLUDE <P16F887.INC>
+	    
+	    __CONFIG    _CONFIG1, _LVP_OFF & _FCMEN_ON & _IESO_OFF & _BOR_OFF & _CPD_OFF & _CP_OFF & _MCLRE_ON & _PWRTE_ON & _WDT_OFF & _INTRC_OSC_NOCLKOUT
+	    __CONFIG    _CONFIG2, _WRT_OFF & _BOR21V
+	    
+	    	    ORG		0x00
+COM	    EQU		0x20; Declara la variable
+VA	    EQU		0x21
+VB	    EQU		0x22
+VC	    EQU		0x23	    
+	    BSF		STATUS, RP0
+	    BSF		STATUS, RP1 ; BANCO 3
+	    CLRF	ANSEL
+	    CLRF	ANSELH		;DESACTIVAR ENTRADAS ANALOGICAS
+	    BSF		STATUS, RP0
+	    BCF		STATUS, RP1	;BANCO 1
+	    CLRF	TRISA		
+	    CLRF	TRISB		
+	    CLRF	TRISC
+	    CLRF	TRISD
+	    CLRF	TRISE		;Todas como salidas
+	    BCF		STATUS, RP0
+	    BCF		STATUS, RP1	;BANCO 0
+	    MOVLW	0x64
+	    MOVWF	COM
+CUENTA	    MOVF	COM, W
+	    MOVWF	PORTB
+	    CALL	RET		;LLAMADA A RETARDO, COMENTAR SI SE VA A SIMULAR
+	    DECFSZ	COM,F
+	    GOTO	CUENTA
+	    CLRF	PORTB
+CICLO	    GOTO	CICLO	    
+	    
+	    
+;	    
+;                                   FUNCION DE RETARDO
+;
+	    
+RET	    MOVLW	0x01
+	    MOVWF	VC
+C_VC	    MOVLW	0xFA
+	    MOVWF	VB
+C_VB	    MOVLW	0xF9;0xF9
+	    MOVWF	VA
+C_VA	    NOP
+	    DECFSZ	VA,F
+	    GOTO	C_VA
+	    DECFSZ	VB,F
+	    GOTO	C_VB
+	    DECFSZ	VC,F
+	    GOTO	C_VC
+	    RETURN
+	    
+	    END

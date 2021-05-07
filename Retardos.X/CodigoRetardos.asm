@@ -1,0 +1,74 @@
+	    LIST P=16F887
+	    INCLUDE <P16F887.INC>
+	    
+	    __CONFIG    _CONFIG1, _LVP_OFF & _FCMEN_ON & _IESO_OFF & _BOR_OFF & _CPD_OFF & _CP_OFF & _MCLRE_ON & _PWRTE_ON & _WDT_OFF & _INTRC_OSC_NOCLKOUT
+	    __CONFIG    _CONFIG2, _WRT_OFF & _BOR21V
+	    
+	    
+	    ORG		0x00
+	    
+CT	    EQU		0x20
+	    
+	    ORG	    0x00
+	    BSF	    STATUS, RP0
+	    BSF	    STATUS, RP1
+	    CLRF    ANSEL
+	    CLRF    ANSELH
+	    BSF	    STATUS, RP0
+	    BCF	    STATUS, RP1
+	    MOVLW   0xFF
+	    MOVWF   TRISA
+	    CLRF    TRISB
+	    CLRF    TRISC
+	    CLRF    TRISD
+	    CLRF    TRISE
+	    
+	    ;ASIGNACION DE VALOR A OPTION REG
+	    MOVLW	0xD7
+	    MOVWF	OPTION_REG
+	   
+	    BCF		STATUS, RP0
+	    BCF		STATUS, RP1 ;BANCO 0
+	    
+C_P	    MOVLW	0xFF
+	    MOVWF	PORTA
+	    CALL	RET_A
+	    MOVLW	0x00
+	    MOVWF	PORTB
+	    CALL	RET_B
+	    GOTO	C_P
+	    
+
+	    
+	    ;
+	    ;FUNCIONES DE RETARDO
+	    ;
+	    
+RET_A	    CLRF	TMR0
+ET0IF	    BTFSS	INTCON, T0IF
+	    GOTO	ET0IF
+	    BCF		INTCON, T0IF
+	    RETURN
+	    
+RET_B	    CLRF	TMR0
+EB6	    BTFSS	TMR0,6
+	    GOTO	EB6
+	    RETURN
+	    
+RET_C	    MOVLW	0x9C
+	    MOVWF	TMR0
+ET0IF2	    BTFSS	INTCON, T0IF
+	    GOTO	ET0IF2
+	    BCF		INTCON, T0IF
+	    RETURN
+	    
+RET_D	    MOVLW	0x7A
+	    MOVWF	CT
+C_IR	    CLRF	TMR0
+EB6_2	    BTFSS	TMR0,6
+	    GOTO	EB6
+	    DECFSZ	CT,F
+	    GOTO	C_IR
+	    RETURN
+	    
+	    END

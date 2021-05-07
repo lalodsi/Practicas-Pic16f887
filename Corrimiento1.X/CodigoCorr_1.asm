@@ -1,0 +1,90 @@
+	    LIST P=16F887
+	    INCLUDE <P16F887.INC>
+
+	    __CONFIG    _CONFIG1, _LVP_OFF & _FCMEN_ON & _IESO_OFF & _BOR_OFF & _CPD_OFF & _CP_OFF & _MCLRE_ON & _PWRTE_ON & _WDT_OFF & _INTRC_OSC_NOCLKOUT
+	    __CONFIG    _CONFIG2, _WRT_OFF & _BOR21V
+
+	    ORG		0x00
+VA	    EQU		0x20
+VB	    EQU		0x21
+VC	    EQU		0x22
+	    BSF		STATUS, RP0
+	    BSF		STATUS, RP1
+	    CLRF	ANSEL
+	    CLRF	ANSELH
+	    BSF		STATUS, RP0
+	    BCF		STATUS, RP1
+	    MOVLW	0xFF
+	    MOVWF	TRISA
+	    CLRF	TRISB
+	    CLRF	TRISC
+	    CLRF	TRISD
+	    CLRF	TRISE
+	    BCF		STATUS, RP0
+	    BCF		STATUS, RP1	; BANCO 0
+INICIO	    MOVLW	0x01
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x02
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x04
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x08
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x10
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x20
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x40
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x80
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x40
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x20
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x10
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x08
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x04
+	    MOVWF	PORTB
+	    CALL	RET
+	    MOVLW	0x02
+	    MOVWF	PORTB
+	    CALL	RET
+	    GOTO	INICIO
+	    
+	    
+	    
+;
+;   Función de retardo a aproximadamente 1/4 de segundo
+;
+RET	    MOVLW	0x01
+	    
+	    MOVWF	VC
+C_VC	    MOVLW	0xFA;0xFA
+	    MOVWF	VB
+C_VB	    MOVLW	0xF9;0xF9
+	    MOVWF	VA
+C_VA	    NOP
+	    DECFSZ	VA,F
+	    GOTO	C_VA
+	    DECFSZ	VB,F
+	    GOTO	C_VB
+	    DECFSZ	VC,F
+	    GOTO	C_VC
+	    ;RETURN
+	    
+	    END

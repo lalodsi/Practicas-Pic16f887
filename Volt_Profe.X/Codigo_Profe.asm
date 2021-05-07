@@ -1,0 +1,298 @@
+	
+		PROCESSOR   P16F887
+		INCLUDE	    <P16F887.INC>
+
+		__CONFIG _CONFIG1, (_INTRC_OSC_NOCLKOUT & _WDT_OFF & _PWRTE_OFF & _MCLRE_OFF & _CP_OFF & _CPD_OFF & _BOR_OFF & _IESO_OFF & _FCMEN_OFF & _LVP_OFF & _DEBUG_OFF)
+		__CONFIG _CONFIG2, (_WRT_OFF & _BOR40V)
+
+		ORG		0x00
+		
+MX		EQU	0x20
+CX		EQU	0x21
+DX		EQU	0x22
+UX		EQU	0x23
+XV		EQU	0x24
+TCE		EQU	0x25
+TDE		EQU	0x26
+C51		EQU	0x27
+C05		EQU	0x28
+TTC		EQU	0x29
+TTD		EQU	0x2A
+X40		EQU	0x2B
+VAD		EQU	0x2C
+	
+		
+	
+		BANKSEL	ANSEL
+		MOVLW	0x20
+		MOVWF	ANSEL
+		CLRF	ANSELH
+	
+		BANKSEL	TRISA
+		CLRF	TRISA
+		CLRF	TRISB
+		MOVLW	0x01
+		MOVWF	TRISE
+		CLRF	TRISD
+		CLRF	TRISC
+
+		CLRF	ADCON1
+		MOVLW	0xD4
+		MOVWF	OPTION_REG
+	
+		BANKSEL	PORTA
+		MOVLW	0xD5
+		MOVWF	ADCON0
+
+;-------------------------------------------------------------	
+;-------------------------------------------------------------			
+C_P		CLRF	MX
+		CLRF	CX
+		CLRF	DX
+		CLRF	UX
+
+		BSF		ADCON0,GO_DONE
+EAD		BTFSC	ADCON0,GO_DONE
+		GOTO	EAD
+		MOVF	ADRESH,W
+
+		;MOVLW	.0
+		;MOVWF	VAD
+		;---------------------------------
+		CALL	RCX
+		MOVWF	CX
+	
+		MOVF	TTC,W	;
+		CALL	RDX
+		MOVWF	DX
+
+		MOVF	TTC,W	;SELECCION DE CASO
+		CALL	RUX
+		MOVWF	UX
+
+		CALL	VALDX
+		NOP
+		;---------------------------------
+		MOVLW	.40
+		MOVWF	X40
+
+CX40	MOVF	UX,W
+		CALL	T7S
+		MOVWF	PORTB
+		MOVLW	0x01
+		MOVWF	PORTC
+		CALL	R625
+	
+		MOVF	DX,W
+		CALL	T7S
+		MOVWF	PORTB
+		MOVLW	0x02
+		MOVWF	PORTC
+		CALL	R625
+	
+		MOVF	CX,W
+		CALL	T7S
+		MOVWF	PORTB
+		BSF		PORTB,7
+		MOVLW	0x04
+		MOVWF	PORTC
+		CALL	R625
+		
+		MOVF	MX,W
+		CALL	T7S
+		MOVWF	PORTB
+		MOVLW	0x08
+		MOVWF	PORTC
+		CALL	R625
+	
+		DECFSZ	X40,F
+		GOTO	CX40		
+		;---------------------------------
+		
+
+		;NOP
+		GOTO	C_P
+;-------------------------------------------------------------			
+;-------------------------------------------------------------		
+RCX		MOVWF	TCE		;VAL CENTENAS
+		CLRF	C51		;CONT CEN
+		CLRF	TTC		;REMANENTE
+R51		MOVLW	.51
+		SUBWF	TCE,W
+		BTFSS	STATUS, C
+		GOTO	RF51
+		MOVWF	TCE
+		MOVWF	TTC
+		INCF	C51,F
+		GOTO	R51		;---
+RF51	MOVF	C51,F
+		BTFSS	STATUS,Z
+		GOTO	XF51
+		MOVF	TCE,W	;TRANS VAL CE COMO REMANENTE A DECENAS
+		MOVWF	TTC	;
+XF51	MOVF	C51,W
+		RETURN
+;-------------------------------------------------------------	
+RDX		MOVWF	TDE		;VAL DECENAS
+		CLRF	C05		;CONT DEC
+		CLRF	TTD		;REMANENTE
+R05		MOVLW	.5
+		SUBWF	TDE,W
+		BTFSS	STATUS, C
+		GOTO	RF05
+		MOVWF	TDE
+		MOVWF	TTD
+		INCF	C05,F
+		GOTO	R05		;---
+RF05	MOVF	C05,F
+		BTFSC	STATUS,Z
+		GOTO	C05CP
+		GOTO	C05CN
+
+C05CP	MOVF	TDE,W
+		MOVWF	TTD
+		GOTO	XRF05	
+		
+C05CN	MOVF	TTD,F	;EV REM CERO
+		BTFSS	STATUS,Z
+		GOTO	C05X
+		MOVLW	0x05
+		MOVWF	TTD
+
+C05X	MOVLW	0x0A	;SI CON = 10 DECREMENTAR Y CARGAR REM 05
+		SUBWF	C05,W
+		BTFSS	STATUS,Z
+		GOTO	XRF05
+		DECF	C05,F
+		MOVLW	0x05
+		MOVWF	TTD		;---
+XRF05	MOVF	C05,W
+		RETURN
+;-------------------------------------------------------------	
+RUX		MOVWF	XV
+		MOVF	XV,F
+		BTFSC	STATUS,Z
+		GOTO	XR0
+
+		MOVLW	.11
+		SUBWF	XV,W
+		BTFSS	STATUS,C
+		GOTO	XR1
+
+		MOVLW	.16
+		SUBWF	XV,W
+		BTFSS	STATUS,C
+		GOTO	XR2
+
+		MOVLW	.36
+		SUBWF	XV,W
+		BTFSS	STATUS,C
+		GOTO	XR3
+
+		MOVLW	.41
+		SUBWF	XV,W
+		BTFSS	STATUS,C
+		GOTO	XR4
+		GOTO	XR5
+
+XR0		RETLW	0x00
+;-------------------------------------------------------------	
+XR1		MOVF	TTD,W
+		ADDWF	PCL,F
+		NOP
+		RETLW	0x02	
+		RETLW	0x04	
+		RETLW	0x06	
+		RETLW	0x08	
+		RETLW	0x00
+
+XR2		MOVF	TTD,W
+		ADDWF	PCL,F
+		NOP
+		RETLW	0x02	
+		RETLW	0x04	
+		RETLW	0x05	
+		RETLW	0x07	
+		RETLW	0x09
+	
+XR3		MOVF	TTD,W
+		ADDWF	PCL,F
+		NOP
+		RETLW	0x01	
+		RETLW	0x03	
+		RETLW	0x05	
+		RETLW	0x07	
+		RETLW	0x09	
+
+XR4		MOVF	TTD,W
+		ADDWF	PCL,F
+		NOP
+		RETLW	0x01	
+		RETLW	0x03	
+		RETLW	0x05	
+		RETLW	0x06	
+		RETLW	0x08
+
+XR5		MOVF	TTD,W
+		ADDWF	PCL,F
+		NOP
+		RETLW	0x00	
+		RETLW	0x02	
+		RETLW	0x04	
+		RETLW	0x06	
+		RETLW	0x08
+;-------------------------------------------------------------
+VALDX	MOVLW	.15
+		SUBWF	TTC,W
+		BTFSC	STATUS,Z
+		GOTO	ERR
+		MOVLW	.20
+		SUBWF	TTC,W
+		BTFSC	STATUS,Z
+		GOTO	ERR
+		MOVLW	.25
+		SUBWF	TTC,W
+		BTFSC	STATUS,Z
+		GOTO	ERR
+		MOVLW	.30
+		SUBWF	TTC,W
+		BTFSC	STATUS,Z
+		GOTO	ERR
+		MOVLW	.35
+		SUBWF	TTC,W
+		BTFSC	STATUS,Z
+		GOTO	ERR
+		MOVLW	.40
+		SUBWF	TTC,W
+		BTFSC	STATUS,Z
+		GOTO	ERR
+		MOVLW	.45
+		SUBWF	TTC,W
+		BTFSC	STATUS,Z
+		GOTO	ERR
+		RETURN
+ERR		DECF	DX,F
+		RETURN	
+;-------------------------------------------------------------	
+T7S		ADDWF	PCL,F
+		RETLW	0x3F	
+		RETLW	0x06	
+		RETLW	0x5B	
+		RETLW	0x4F	
+		RETLW	0x66
+		RETLW	0x6D	
+		RETLW	0x7D	
+		RETLW	0x07	
+		RETLW	0x7F	
+		RETLW	0x67
+
+R625	MOVLW	0x3E
+		MOVWF	TMR0
+ET0		BTFSS	INTCON,T0IF
+		GOTO	ET0
+		BCF		INTCON,T0IF
+		RETURN
+	
+;-------------------------------------------------------------
+		END
+
